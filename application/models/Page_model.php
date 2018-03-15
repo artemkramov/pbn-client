@@ -14,12 +14,6 @@ class Page_model extends Base_model
     const TEMPLATE_ALIAS = '<:alias>';
 
     /**
-     * Current language
-     * @var string
-     */
-    private $currentLanguage = 'en';
-
-    /**
      * @param $uri
      * @throws NotFoundException
      * @return mixed
@@ -209,8 +203,9 @@ class Page_model extends Base_model
         if (isset($record)) {
             $this->queryBuildExistedItems();
             $this->db->where(array(
-                'id'        => $record->pageID,
-                'isEnabled' => self::STATUS_ENABLED
+                'id'               => $record->pageID,
+                'isEnabled'        => self::STATUS_ENABLED,
+                'datePublished <=' => date('Y-m-d')
             ));
             $page = $this->db->get(DatabaseTableEnum::TABLE_PAGE)->row();
             if (isset($page)) {
@@ -278,9 +273,10 @@ class Page_model extends Base_model
         $this->db->where(array(
             DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID' => $page->id,
             DatabaseTableEnum::TABLE_PAGE . '.isDeleted'         => self::STATUS_NOT_DELETED,
-            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'         => self::STATUS_ENABLED
+            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'         => self::STATUS_ENABLED,
+            DatabaseTableEnum::TABLE_PAGE . '.datePublished <='  => date('Y-m-d')
         ));
-        $this->db->order_by('sort');
+        $this->db->order_by('datePublished', 'DESC');
         if ($page->isPaginationOn && isset($paginationPage) && !$count) {
             $this->db->limit($page->paginationPerPage, ($paginationPage - 1) * $page->paginationPerPage);
         }
@@ -300,9 +296,10 @@ class Page_model extends Base_model
         $this->db->where(array(
             DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageChildID' => $page->id,
             DatabaseTableEnum::TABLE_PAGE . '.isDeleted'        => self::STATUS_NOT_DELETED,
-            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'        => self::STATUS_ENABLED
+            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'        => self::STATUS_ENABLED,
+            DatabaseTableEnum::TABLE_PAGE . '.datePublished <=' => date('Y-m-d')
         ));
-        $this->db->order_by('sort');
+        $this->db->order_by('datePublished', 'DESC');
         $this->db->distinct();
         return $this->db->get()->result();
     }
@@ -345,8 +342,8 @@ class Page_model extends Base_model
          * Also build breadcrumbs data
          */
         if (isset($currentParentPage)) {
-            $page->next = $this->getChildPageBySort($currentParentPage->id, $page->sort, '>');
-            $page->previous = $this->getChildPageBySort($currentParentPage->id, $page->sort, '<');
+            $page->next = $this->getChildPageBySort($currentParentPage->id, $page->id, '>');
+            $page->previous = $this->getChildPageBySort($currentParentPage->id, $page->id, '<');
 
             /**
              * Build breadcrumbs if it is needed
@@ -371,10 +368,11 @@ class Page_model extends Base_model
         $this->db->where(array(
             DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID' => $parentPageID,
             DatabaseTableEnum::TABLE_PAGE . '.isDeleted'         => self::STATUS_NOT_DELETED,
-            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'         => self::STATUS_ENABLED
+            DatabaseTableEnum::TABLE_PAGE . '.isEnabled'         => self::STATUS_ENABLED,
+            DatabaseTableEnum::TABLE_PAGE . '.datePublished <='  => date('Y-m-d')
         ));
-        $this->db->where('sort ' . $operator, $sort);
-        $this->db->order_by('sort', 'DESC');
+        $this->db->where(DatabaseTableEnum::TABLE_PAGE . '.id ' . $operator, $sort);
+        $this->db->order_by(DatabaseTableEnum::TABLE_PAGE . '.id', 'DESC');
         $this->db->distinct();
         $page = $this->db->get()->row();
         if (isset($page)) {
@@ -410,19 +408,7 @@ class Page_model extends Base_model
      */
     private function loadPageMultilingualFields($page)
     {
-        $row = $this->db->where(array(
-            'language' => $this->currentLanguage,
-            'pageID'   => $page->id
-        ))->get(DatabaseTableEnum::TABLE_PAGE_LANGUAGE)->row();
-        if (!empty($row)) {
-            $fields = get_object_vars($row);
-            $excludeFields = array('id', 'language', 'pageID');
-            foreach ($fields as $fieldName => $value) {
-                if (!in_array($fieldName, $excludeFields)) {
-                    $page->{$fieldName} = $row->{$fieldName};
-                }
-            }
-        }
+        $this->loadMultilingualFields($page, DatabaseTableEnum::TABLE_PAGE_LANGUAGE, 'pageID');
     }
 
     /**
@@ -479,7 +465,7 @@ class Page_model extends Base_model
      * @param $page
      * @return string
      */
-    private function getDefaultPageRoute($page)
+    public function getDefaultPageRoute($page)
     {
         if (!isset($page->routes)) {
             $page->routes = $this->getPageRoutes($page);
@@ -518,16 +504,65 @@ class Page_model extends Base_model
     public function getRecentPosts($number)
     {
         $pages = $this->db->where(array(
-            'isDeleted'                                   => self::STATUS_NOT_DELETED,
-            'isEnabled'                                   => self::STATUS_ENABLED,
-            DatabaseTableEnum::TABLE_PAGE_TYPE . '.alias' => 'post'
+            'isDeleted'                                         => self::STATUS_NOT_DELETED,
+            'isEnabled'                                         => self::STATUS_ENABLED,
+            DatabaseTableEnum::TABLE_PAGE_TYPE . '.alias'       => 'post',
+            DatabaseTableEnum::TABLE_PAGE . '.datePublished <=' => date('Y-m-d')
         ))->limit($number)
             ->join(DatabaseTableEnum::TABLE_PAGE_TYPE, DatabaseTableEnum::TABLE_PAGE_TYPE . '.id = ' . DatabaseTableEnum::TABLE_PAGE . '.pageTypeID')
-            ->order_by('id', 'desc')
+            ->order_by('datePublished', 'desc')
             ->select(DatabaseTableEnum::TABLE_PAGE . '.*')
             ->get(DatabaseTableEnum::TABLE_PAGE)
             ->result();
         foreach ($pages as $page) {
+            $this->loadPageMultilingualFields($page);
+            $page->url = $this->getDefaultPageRoute($page);
+        }
+        return $pages;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAllPagesForSitemapXml()
+    {
+        $pages = $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*')
+            ->from(DatabaseTableEnum::TABLE_PAGE)
+            ->where(array(
+                'isEnabled'        => self::STATUS_ENABLED,
+                'isDeleted'        => self::STATUS_NOT_DELETED,
+                'datePublished <=' => date('Y-m-d')
+            ))
+            ->get()
+            ->result();
+
+        foreach ($pages as $page) {
+            $page->url = $this->getDefaultPageRoute($page);
+        }
+        return $pages;
+    }
+
+    /**
+     * @param $parentID
+     * @param $limit
+     * @return mixed
+     */
+    public function getPagesForSitemapHtml($limit, $parentID = null)
+    {
+        $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*')
+            ->from(DatabaseTableEnum::TABLE_PAGE)
+            ->where(array(
+                'isEnabled'                                          => self::STATUS_ENABLED,
+                'isDeleted'                                          => self::STATUS_NOT_DELETED,
+                'datePublished <='                                   => date('Y-m-d'),
+                DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID' => $parentID
+            ))
+            ->limit($limit);
+        $this->db->join(DatabaseTableEnum::TABLE_PAGE_PAGE, DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageChildID = ' . DatabaseTableEnum::TABLE_PAGE . '.id', 'left');
+
+        $pages = $this->db->get()->result();
+        foreach ($pages as $page) {
+            $page->children = $this->getPagesForSitemapHtml($limit, $page->id);
             $this->loadPageMultilingualFields($page);
             $page->url = $this->getDefaultPageRoute($page);
         }

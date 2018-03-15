@@ -1,3 +1,11 @@
+<?
+
+/**
+ * @var array $menu
+ */
+
+?>
+
 <!--Contact-->
 <section id="contact" class="p-5">
     <div class="container">

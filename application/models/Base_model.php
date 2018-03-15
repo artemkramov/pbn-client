@@ -13,6 +13,12 @@ class Base_model extends CI_Model
     const STATUS_NOT_DELETED = 0;
 
     /**
+     * Current language
+     * @var string
+     */
+    protected $currentLanguage = 'en';
+
+    /**
      * @param $tableName
      * @return mixed
      */
@@ -34,11 +40,36 @@ class Base_model extends CI_Model
         return $this->db->get($tableName)->row();
     }
 
+    /**
+     * Set the filter
+     */
     protected function queryBuildExistedItems()
     {
         $this->db->where(array(
             'isDeleted' => self::STATUS_NOT_DELETED
         ));
+    }
+
+    /**
+     * @param $bean
+     * @param $table
+     * @param $foreignKey
+     */
+    protected function loadMultilingualFields($bean, $table, $foreignKey)
+    {
+        $row = $this->db->where(array(
+            'language'  => $this->currentLanguage,
+            $foreignKey => $bean->id
+        ))->get($table)->row();
+        $excludeFields = array('id', 'language', $foreignKey);
+        if (!empty($row)) {
+            $fields = get_object_vars($row);
+            foreach ($fields as $fieldName => $value) {
+                if (!in_array($fieldName, $excludeFields)) {
+                    $bean->{$fieldName} = $row->{$fieldName};
+                }
+            }
+        }
     }
 
 }
@@ -59,6 +90,9 @@ abstract class DatabaseTableEnum
     const TABLE_ROUTE = 'route';
     const TABLE_TEMPLATE = 'template';
     const TABLE_PAGE_TYPE = 'page-type';
+    const TABLE_MENU = 'menu';
+    const TABLE_MENU_LANGUAGE = 'menu-language';
+    const TABLE_MENU_TYPE = 'menu-type';
 
 }
 
@@ -66,4 +100,5 @@ abstract class DatabaseTableEnum
  * Class NotFoundException
  */
 class NotFoundException extends Exception
-{}
+{
+}

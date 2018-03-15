@@ -5,6 +5,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * @var string $title
  * @var array $metaData
  * @var stdClass $page
+ * @var array $menuHeader
+ * @var array $menuFooter
  */
 
 ?><!DOCTYPE html>
@@ -31,13 +33,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 </head>
 <body id="page-top">
 
-<? $this->load->view('inner/header') ?>
+<? $this->load->view('inner/header', array(
+    'menu' => $menuHeader
+)) ?>
 
 <? $this->load->view('carcass/' . $page->carcass, array(
     'page' => $page
 )) ?>
 
-<? $this->load->view('inner/footer') ?>
+<? $this->load->view('inner/footer', array(
+    'menu' => $menuFooter
+)) ?>
 
 <!-- Bootstrap core JavaScript -->
 <script src="<?= base_url('/assets/vendor/jquery/jquery.min.js') ?>"></script>
