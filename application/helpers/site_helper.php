@@ -21,7 +21,7 @@ function getRecentPosts($number)
 function dashesToCamelCase($string, $capitalizeFirstCharacter = false)
 {
     $str = str_replace(' ', '', ucwords(str_replace('-', ' ', $string)));
-    if (!$capitalizeFirstCharacter) {
+    if (!$capitalizeFirstCharacter && strlen($str) > 0) {
         $str[0] = strtolower($str[0]);
     }
     return $str;

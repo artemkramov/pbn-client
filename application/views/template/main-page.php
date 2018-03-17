@@ -26,10 +26,6 @@
                     </div>
                 <? endforeach; ?>
                 <? echo $page->paginationLinks ?>
-<!--                <ul class="pagination">-->
-<!--                    <li class="active"><a href="/">1</a></li>-->
-<!--                    <li><a href="/page/2">2</a></li>-->
-<!--                </ul>-->
             </div>
             <div class="col-lg-3">
                 <? $this->load->view('inner/sidebar') ?>

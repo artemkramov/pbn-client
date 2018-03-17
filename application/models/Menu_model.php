@@ -13,6 +13,7 @@ class Menu_model extends Base_model
      */
     public function getMenuByType($typeAlias)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_MENU);
         $parentRecords = $this->db->select(DatabaseTableEnum::TABLE_MENU . '.*, ' . DatabaseTableEnum::TABLE_MENU_LANGUAGE . '.title')
             ->from(DatabaseTableEnum::TABLE_MENU)
             ->join(DatabaseTableEnum::TABLE_MENU_TYPE, DatabaseTableEnum::TABLE_MENU_TYPE . '.id = ' . DatabaseTableEnum::TABLE_MENU . '.menuTypeID')
@@ -40,6 +41,7 @@ class Menu_model extends Base_model
      */
     public function getMenuChildren($menu)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_MENU);
         $childRecords = $this->db->select(DatabaseTableEnum::TABLE_MENU . '.*,' . DatabaseTableEnum::TABLE_MENU_LANGUAGE . '.title')
             ->from(DatabaseTableEnum::TABLE_MENU)
             ->join(DatabaseTableEnum::TABLE_MENU_LANGUAGE, DatabaseTableEnum::TABLE_MENU_LANGUAGE . '.menuID = ' . DatabaseTableEnum::TABLE_MENU . '.id')

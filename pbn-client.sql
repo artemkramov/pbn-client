@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Generation Time: Mar 15, 2018 at 10:47 AM
+-- Generation Time: Mar 17, 2018 at 03:58 PM
 -- Server version: 10.1.16-MariaDB
 -- PHP Version: 5.5.38
 
@@ -32,15 +32,16 @@ CREATE TABLE `language` (
   `local` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `isDefault` tinyint(1) NOT NULL DEFAULT '0',
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `language`
 --
 
-INSERT INTO `language` (`id`, `url`, `local`, `name`, `isDefault`, `isDeleted`) VALUES
-(1, 'en', 'en_EN', 'English', 1, 0);
+INSERT INTO `language` (`id`, `url`, `local`, `name`, `isDefault`, `isDeleted`, `websiteID`) VALUES
+(1, 'en', 'en_EN', 'English', 1, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -61,21 +62,22 @@ CREATE TABLE `menu` (
   `isEnabled` tinyint(1) NOT NULL DEFAULT '1',
   `isDirect` tinyint(1) NOT NULL DEFAULT '0',
   `isNewTab` tinyint(1) NOT NULL DEFAULT '0',
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `menu`
 --
 
-INSERT INTO `menu` (`id`, `dateCreated`, `dateModified`, `sort`, `parentID`, `pageID`, `image`, `url`, `menuTypeID`, `isEnabled`, `isDirect`, `isNewTab`, `isDeleted`) VALUES
-(1, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, NULL, 1, NULL, NULL, 1, 1, 0, 0, 0),
-(2, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, NULL, 2, NULL, NULL, 1, 1, 0, 0, 0),
-(3, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 2, NULL, 3, NULL, NULL, 1, 1, 0, 0, 0),
-(4, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, 2, 4, NULL, NULL, 1, 1, 0, 0, 0),
-(5, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 4, 5, NULL, NULL, 1, 1, 0, 0, 0),
-(6, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, NULL, 2, NULL, NULL, 2, 1, 0, 0, 0),
-(7, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, NULL, NULL, NULL, '/user', 1, 1, 1, 0, 0);
+INSERT INTO `menu` (`id`, `dateCreated`, `dateModified`, `sort`, `parentID`, `pageID`, `image`, `url`, `menuTypeID`, `isEnabled`, `isDirect`, `isNewTab`, `isDeleted`, `websiteID`) VALUES
+(1, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, NULL, 1, NULL, NULL, 1, 1, 0, 0, 0, 1),
+(2, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, NULL, 2, NULL, NULL, 1, 1, 0, 0, 0, 1),
+(3, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 2, NULL, 3, NULL, NULL, 1, 1, 0, 0, 0, 1),
+(4, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, 2, 4, NULL, NULL, 1, 1, 0, 0, 0, 1),
+(5, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 4, 5, NULL, NULL, 1, 1, 0, 0, 0, 1),
+(6, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, NULL, 2, NULL, NULL, 2, 1, 0, 0, 0, 1),
+(7, '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, NULL, NULL, NULL, '/user', 2, 1, 1, 0, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -113,16 +115,17 @@ CREATE TABLE `menu-type` (
   `id` int(11) NOT NULL,
   `alias` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `menu-type`
 --
 
-INSERT INTO `menu-type` (`id`, `alias`, `name`, `isDeleted`) VALUES
-(1, 'header', 'Header menu', 0),
-(2, 'footer', 'Footer menu', 0);
+INSERT INTO `menu-type` (`id`, `alias`, `name`, `isDeleted`, `websiteID`) VALUES
+(1, 'header', 'Header menu', 0, 1),
+(2, 'footer', 'Footer menu', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -139,48 +142,55 @@ CREATE TABLE `page` (
   `dateCreated` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `dateModified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `sort` int(11) NOT NULL,
+  `authorID` int(11) DEFAULT NULL,
+  `seoPriority` decimal(10,4) NOT NULL DEFAULT '0.5000',
   `pageTypeID` int(11) DEFAULT NULL,
+  `ratingValue` int(11) DEFAULT NULL,
+  `ratingCount` int(11) DEFAULT NULL,
   `isPaginationOn` tinyint(1) NOT NULL DEFAULT '0',
   `paginationID` int(11) DEFAULT NULL,
   `paginationPerPage` smallint(6) DEFAULT NULL,
   `templateCarcassID` int(11) NOT NULL,
   `templateInnerID` int(11) NOT NULL,
+  `isVisibleSitemapXml` tinyint(1) NOT NULL DEFAULT '1',
+  `isVisibleSitemapHtml` tinyint(1) NOT NULL DEFAULT '1',
   `isMainPage` tinyint(1) NOT NULL DEFAULT '0',
   `isEnabled` tinyint(1) NOT NULL DEFAULT '1',
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `page`
 --
 
-INSERT INTO `page` (`id`, `image1`, `image2`, `image3`, `datePublished`, `dateCreated`, `dateModified`, `sort`, `pageTypeID`, `isPaginationOn`, `paginationID`, `paginationPerPage`, `templateCarcassID`, `templateInnerID`, `isMainPage`, `isEnabled`, `isDeleted`) VALUES
-(1, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, NULL, 1, 1, 1, 1, 2, 1, 1, 0),
-(2, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 0, 2, 0, 1, 1, 1, 3, 0, 1, 0),
-(3, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 1, 2, 0, NULL, NULL, 1, 3, 0, 1, 0),
-(4, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 2, 2, 0, NULL, NULL, 1, 3, 0, 1, 0),
-(5, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 3, 2, 0, NULL, NULL, 1, 3, 0, 1, 0),
-(6, NULL, NULL, NULL, '2018-03-14', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 3, 2, 0, NULL, NULL, 1, 3, 0, 1, 0);
+INSERT INTO `page` (`id`, `image1`, `image2`, `image3`, `datePublished`, `dateCreated`, `dateModified`, `sort`, `authorID`, `seoPriority`, `pageTypeID`, `ratingValue`, `ratingCount`, `isPaginationOn`, `paginationID`, `paginationPerPage`, `templateCarcassID`, `templateInnerID`, `isVisibleSitemapXml`, `isVisibleSitemapHtml`, `isMainPage`, `isEnabled`, `isDeleted`, `websiteID`) VALUES
+(1, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '2018-03-14 22:00:00', 0, NULL, '1.0000', NULL, NULL, NULL, 1, 2, 1, 1, 2, 1, 1, 1, 1, 0, 1),
+(2, NULL, NULL, NULL, '2018-03-14', '0000-00-00 00:00:00', '2018-03-13 22:00:00', 0, NULL, '0.5000', 2, 4, 5, 1, 1, 1, 1, 3, 1, 1, 0, 1, 0, 1),
+(3, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '2018-03-13 22:00:00', 1, NULL, '0.5000', 2, NULL, NULL, 0, NULL, NULL, 1, 3, 1, 1, 0, 1, 0, 1),
+(4, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 2, NULL, '0.5000', 2, NULL, NULL, 0, NULL, NULL, 1, 3, 1, 1, 0, 1, 0, 1),
+(5, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '2018-03-13 22:00:00', 3, NULL, '0.5000', 2, NULL, NULL, 0, NULL, NULL, 1, 3, 1, 1, 0, 1, 0, 1),
+(6, NULL, NULL, NULL, '2018-03-15', '0000-00-00 00:00:00', '0000-00-00 00:00:00', 3, NULL, '0.5000', 2, NULL, NULL, 0, NULL, NULL, 1, 3, 1, 1, 0, 1, 0, 1);
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `page-extra`
+-- Table structure for table `page-extra-meta`
 --
 
-CREATE TABLE `page-extra` (
+CREATE TABLE `page-extra-meta` (
   `id` int(11) NOT NULL,
   `pageID` int(11) NOT NULL,
-  `fieldName` varchar(255) NOT NULL,
-  `fieldValue` text NOT NULL
+  `name` varchar(255) NOT NULL,
+  `content` text NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Dumping data for table `page-extra`
+-- Dumping data for table `page-extra-meta`
 --
 
-INSERT INTO `page-extra` (`id`, `pageID`, `fieldName`, `fieldValue`) VALUES
-(1, 2, 'type', 'post');
+INSERT INTO `page-extra-meta` (`id`, `pageID`, `name`, `content`) VALUES
+(1, 2, 'robots', 'noindex,nofollow');
 
 -- --------------------------------------------------------
 
@@ -205,7 +215,7 @@ CREATE TABLE `page-language` (
 --
 
 INSERT INTO `page-language` (`id`, `pageID`, `language`, `title`, `description`, `descriptionShort`, `seoTitle`, `seoDescription`, `seoKeywords`) VALUES
-(1, 1, 'en', 'Main page', NULL, NULL, 'Main page', 'Main page', 'Main page'),
+(1, 1, 'en', 'Home', NULL, NULL, 'Main page', 'Main page', 'Main page'),
 (2, 2, 'en', 'Family Banking Tips', '<p>Banking is all about education. This is why people who have banking advice need to really do their research. A family can get the best possible banking advice if they talk to financial organs, go online, and read the newspaper. Personal finance is about understanding what a family has and what a family wants to do with its money. Everyone from adults to university students can save and make money if they are smart. The following are some key pieces of <a href="http://www.pennywatchers.net/">banking advice</a> for families.</p>\n<p><strong>Shop Around for the Best Rates<br></strong>Before investing in any one group, it is wise to do some homework. Different banks and organs have different policies and deals for families looking for savings, chequing, and investment options. There are price comparison websites online that allow families to investigate different loan options and interest rates. Knowledge is power when it comes to a family’s money and interests.</p>\n<p><strong>Investigate a Bank’s Resources<br></strong>It is important to always know what a financial group offers individuals and families. For example, a student loan could come with lower interest rates if the individual’s family has an account with the organ. Additionally, it is wise to see what investment and savings options are offered by a financial group. Some people may get lower rates or fees if they sign up with their family versus independently.</p>\n<p>Banks want business. This is why investing in a group as a family is a smart decision: it can mean lower rates on many different types of services and accounts. It is important that a family is clear about its needs: whether the focus is applying for a vehicle loan or looking for the best savings and investment options. With some research, a family can find a bank that services all of its needs.</p>', '<p>Banking is all about education. This is why people who have banking advice need to really do their research. A family can get the best possible banking advice if they talk to financial organs, go online, and read the newspaper. Personal finance is about understanding what a family has and what a family wants to do with its money. Everyone from adults to university students can save and make money if they are smart. The following are some key pieces of <a href="http://www.pennywatchers.net/">banking advice</a> for families.</p>', 'Family Banking Tips', NULL, NULL),
 (3, 3, 'en', 'Providing More Services for my Clients', '<p>Over my last fifteen years as an accountant, I have had the opportunity to interact with many different businesses.&nbsp; Each one of them has presented challenges to me and I have enjoyed the opportunity to work with so many business owners.&nbsp; But due to the economic climate that we are now in, I see that in a couple of years a number of my clients will be gone and I may not be able to maintain the lifestyle that I love.&nbsp; So, I have decided that it is time to provide more services to my clients.</p>\r\n<p>Over my last fifteen years as an accountant, I have had the opportunity to interact with many different businesses.&nbsp; Each one of them has presented challenges to me and I have enjoyed the opportunity to work with so many business owners.&nbsp; But due to the economic climate that we are now in, I see that in a couple of years a number of my clients will be gone and I may not be able to maintain the lifestyle that I love.&nbsp; So, I have decided that it is time to provide more services to my clients.</p>\r\n<p>Over my last fifteen years as an accountant, I have had the opportunity to interact with many different businesses.&nbsp; Each one of them has presented challenges to me and I have enjoyed the opportunity to work with so many business owners.&nbsp; But due to the economic climate that we are now in, I see that in a couple of years a number of my clients will be gone and I may not be able to maintain the lifestyle that I love.&nbsp; So, I have decided that it is time to provide more services to my clients.</p>', NULL, 'Providing More Services for my Clients', NULL, NULL),
 (4, 4, 'en', 'Forex Education: Top 5 Currency Trading Essentials that can help you to improve your Trading', 'If you are struggling to earn consistent profit in forex exchange market then try these simple but important currency trading essentials because they are definitely going to get you substantial profit in forex currency trading market:\r\n\r\nUse Longer Time Frames – Part time forex traders generally think that they don’t need to select longer time frames for trade. In order to establish good forex trading strategy, you need to trade with longer time frames. Longer trading time frames means that you have to study forex trading charts for the longer duration of time like for 2 or for 4 hours daily.\r\nGive some time to your Trades to Work – This option can only be used by those traders who have effectively sized their trading positions. In currency trading market, prices of the currencies can fluctuate dramatically. While trading currencies in the market, traders need to be sure that they will get reasonable profit at the end of their trade. For instance, if you are trading in a market with 30pips stop loss then there are more chances for you to kick out of the currency trading market.\r\nDo not depend so much on Technical Indicators – Rather than depending so much on technical trading indicators, you need to follow major trends with the help of hop board and simple moving average. All successful forex traders does not completely rely on technical forex trading indicators because these indicators can not accurately predict the future currency trading market as they are based on past events.\r\nStart Trading with Two Major Forex Currency Pairs – Beginner traders should always start with one or two major forex currency pairs. In order to get maximum profit by trading a forex currency pair in the market, you need to gather some basic data of the specific forex currency pair. Never trade with three or more currency pairs in the market because it will almost impossible for you to get necessary knowledge about each forex currency pair.\r\nStop listening to the Trading Giants – The forex currency trading world is full of forex trading gurus and trading giants. You can find these gurus and trading giants giving their free suggestions to immature traders on every forex trading forum. While, these trading gurus might seem to be quiet knowledge but you should never trust on them. A good trader should always believe in his forex trading education. A quality forex education will not only guide you about your forex trading goals but it can also be your best companion.', NULL, 'Forex Education: Top 5 Currency Trading Essentials...', NULL, NULL),
@@ -252,8 +262,8 @@ CREATE TABLE `page-route` (
 --
 
 INSERT INTO `page-route` (`id`, `pageID`, `routeID`, `alias`) VALUES
-(1, 2, 1, 'family-banking-tips'),
-(2, 3, 4, 'providing-more-services-for-my-clients'),
+(1, 2, 3, 'family-banking-tips'),
+(2, 3, 1, 'providing-more-services-for-my-clients'),
 (3, 4, 1, 'forex-education-top-5-currency-trading-essentials-that-can-help-you-to-improve-your-trading'),
 (4, 5, 1, 'john-thomas-financial-nys-brokerage-and-financial-company'),
 (5, 6, 3, 'privacy');
@@ -267,16 +277,19 @@ INSERT INTO `page-route` (`id`, `pageID`, `routeID`, `alias`) VALUES
 CREATE TABLE `page-type` (
   `id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL,
-  `alias` varchar(255) NOT NULL
+  `alias` varchar(255) NOT NULL,
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `page-type`
 --
 
-INSERT INTO `page-type` (`id`, `name`, `alias`) VALUES
-(1, 'Page', 'page'),
-(2, 'Post', 'post');
+INSERT INTO `page-type` (`id`, `name`, `alias`, `isDeleted`, `websiteID`) VALUES
+(1, 'Page', 'page', 0, 1),
+(2, 'Post', 'post', 0, 1),
+(3, 'Author', 'author', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -287,16 +300,17 @@ INSERT INTO `page-type` (`id`, `name`, `alias`) VALUES
 CREATE TABLE `pagination` (
   `id` int(11) NOT NULL,
   `template` varchar(255) NOT NULL,
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `pagination`
 --
 
-INSERT INTO `pagination` (`id`, `template`, `isDeleted`) VALUES
-(1, '/page/<:page>', 0),
-(2, 'p=<:page>', 0);
+INSERT INTO `pagination` (`id`, `template`, `isDeleted`, `websiteID`) VALUES
+(1, 'page/<:page>', 0, 1),
+(2, 'p=<:page>', 0, 1);
 
 -- --------------------------------------------------------
 
@@ -309,17 +323,18 @@ CREATE TABLE `route` (
   `name` varchar(255) NOT NULL,
   `link` varchar(255) NOT NULL,
   `priority` tinyint(4) NOT NULL,
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `route`
 --
 
-INSERT INTO `route` (`id`, `name`, `link`, `priority`, `isDeleted`) VALUES
-(1, 'Content', 'content/<:alias>', 1, 0),
-(3, 'Common', '<:all>', 3, 0),
-(4, 'Subpage', '<:alias>/<:alias>', 2, 0);
+INSERT INTO `route` (`id`, `name`, `link`, `priority`, `isDeleted`, `websiteID`) VALUES
+(1, 'Content', 'content/<:alias>', 1, 0, 1),
+(3, 'Common', '<:alias>', 5, 0, 1),
+(5, 'Route with GET', 'blog/<:alias>', 3, 0, 1);
 
 -- --------------------------------------------------------
 
@@ -332,17 +347,18 @@ CREATE TABLE `template` (
   `name` varchar(255) NOT NULL,
   `alias` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
-  `isDeleted` tinyint(1) NOT NULL DEFAULT '0'
+  `isDeleted` tinyint(1) NOT NULL DEFAULT '0',
+  `websiteID` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Dumping data for table `template`
 --
 
-INSERT INTO `template` (`id`, `name`, `alias`, `type`, `isDeleted`) VALUES
-(1, 'General', 'general-carcass', 'carcass', 0),
-(2, 'Main page', 'main-page', 'inner', 0),
-(3, 'Post', 'post', 'inner', 0);
+INSERT INTO `template` (`id`, `name`, `alias`, `type`, `isDeleted`, `websiteID`) VALUES
+(1, 'General', 'general-carcass', 'carcass', 0, 1),
+(2, 'Main page', 'main-page', 'inner', 0, 1),
+(3, 'Post', 'post', 'inner', 0, 1);
 
 --
 -- Indexes for dumped tables
@@ -384,12 +400,13 @@ ALTER TABLE `page`
   ADD KEY `paginationID` (`paginationID`),
   ADD KEY `templateCarcassID` (`templateCarcassID`),
   ADD KEY `templateInnerID` (`templateInnerID`),
-  ADD KEY `pageTypeID` (`pageTypeID`);
+  ADD KEY `pageTypeID` (`pageTypeID`),
+  ADD KEY `authorID` (`authorID`);
 
 --
--- Indexes for table `page-extra`
+-- Indexes for table `page-extra-meta`
 --
-ALTER TABLE `page-extra`
+ALTER TABLE `page-extra-meta`
   ADD PRIMARY KEY (`id`),
   ADD KEY `pageID` (`pageID`);
 
@@ -470,9 +487,9 @@ ALTER TABLE `menu-type`
 ALTER TABLE `page`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 --
--- AUTO_INCREMENT for table `page-extra`
+-- AUTO_INCREMENT for table `page-extra-meta`
 --
-ALTER TABLE `page-extra`
+ALTER TABLE `page-extra-meta`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 --
 -- AUTO_INCREMENT for table `page-language`
@@ -493,7 +510,7 @@ ALTER TABLE `page-route`
 -- AUTO_INCREMENT for table `page-type`
 --
 ALTER TABLE `page-type`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 --
 -- AUTO_INCREMENT for table `pagination`
 --
@@ -503,7 +520,7 @@ ALTER TABLE `pagination`
 -- AUTO_INCREMENT for table `route`
 --
 ALTER TABLE `route`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 --
 -- AUTO_INCREMENT for table `template`
 --
@@ -534,13 +551,14 @@ ALTER TABLE `page`
   ADD CONSTRAINT `page_ibfk_1` FOREIGN KEY (`paginationID`) REFERENCES `pagination` (`id`),
   ADD CONSTRAINT `page_ibfk_2` FOREIGN KEY (`templateCarcassID`) REFERENCES `template` (`id`),
   ADD CONSTRAINT `page_ibfk_3` FOREIGN KEY (`templateInnerID`) REFERENCES `template` (`id`),
-  ADD CONSTRAINT `page_ibfk_4` FOREIGN KEY (`pageTypeID`) REFERENCES `page-type` (`id`);
+  ADD CONSTRAINT `page_ibfk_4` FOREIGN KEY (`pageTypeID`) REFERENCES `page-type` (`id`),
+  ADD CONSTRAINT `page_ibfk_5` FOREIGN KEY (`authorID`) REFERENCES `page` (`id`);
 
 --
--- Constraints for table `page-extra`
+-- Constraints for table `page-extra-meta`
 --
-ALTER TABLE `page-extra`
-  ADD CONSTRAINT `page-extra_ibfk_1` FOREIGN KEY (`pageID`) REFERENCES `page` (`id`);
+ALTER TABLE `page-extra-meta`
+  ADD CONSTRAINT `page-extra-meta_ibfk_1` FOREIGN KEY (`pageID`) REFERENCES `page` (`id`);
 
 --
 -- Constraints for table `page-language`

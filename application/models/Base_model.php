@@ -12,6 +12,9 @@ class Base_model extends CI_Model
     const STATUS_DELETED = 1;
     const STATUS_NOT_DELETED = 0;
 
+    const STATE_ON = 1;
+    const STATE_OFF = 0;
+
     /**
      * Current language
      * @var string
@@ -24,6 +27,7 @@ class Base_model extends CI_Model
      */
     public function getRecords($tableName)
     {
+        $this->queryBuildCurrentWebsite($tableName);
         $this->queryBuildExistedItems();
         return $this->db->get($tableName)->result();
     }
@@ -35,6 +39,7 @@ class Base_model extends CI_Model
      */
     public function getRecordByID($tableName, $id)
     {
+        $this->queryBuildCurrentWebsite($tableName);
         $this->queryBuildExistedItems();
         $this->db->where('id', $id);
         return $this->db->get($tableName)->row();
@@ -47,6 +52,19 @@ class Base_model extends CI_Model
     {
         $this->db->where(array(
             'isDeleted' => self::STATUS_NOT_DELETED
+        ));
+    }
+
+    /**
+     * Set the filter on the website
+     * @param $tableName
+     */
+    protected function queryBuildCurrentWebsite($tableName = null)
+    {
+        $websiteID = $this->config->item('websiteID');
+        $filterField = isset($tableName) ? $tableName . '.websiteID' : 'websiteID';
+        $this->db->where(array(
+            $filterField => $websiteID
         ));
     }
 
@@ -82,7 +100,7 @@ abstract class DatabaseTableEnum
 
     const TABLE_LANGUAGE = 'language';
     const TABLE_PAGE = 'page';
-    const TABLE_PAGE_EXTRA = 'page-extra';
+    const TABLE_PAGE_EXTRA_META = 'page-extra-meta';
     const TABLE_PAGE_LANGUAGE = 'page-language';
     const TABLE_PAGE_PAGE = 'page-page';
     const TABLE_PAGE_ROUTE = 'page-route';

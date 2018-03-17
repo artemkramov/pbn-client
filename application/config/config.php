@@ -64,7 +64,7 @@ $config['uri_protocol']	= 'REQUEST_URI';
 |
 | https://codeigniter.com/user_guide/general/urls.html
 */
-$config['url_suffix'] = '.html';
+$config['url_suffix'] = '';
 
 /*
 |--------------------------------------------------------------------------
@@ -522,4 +522,12 @@ $config['rewrite_short_tags'] = FALSE;
 */
 $config['proxy_ips'] = '';
 
-$config['breadcrumbs'] = false;
+/*
+ * Turn off breadcrumbs
+ */
+$config['breadcrumbs'] = true;
+
+/**
+ * Set current website ID
+ */
+$config['websiteID'] = 1;

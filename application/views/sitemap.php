@@ -11,6 +11,7 @@
         <url>
             <loc><?= $page->url ?></loc>
             <lastmod><?= $page->dateModified ?></lastmod>
+            <priority><?= floatval($page->seoPriority) ?></priority>
         </url>
     <?php endforeach; ?>
 

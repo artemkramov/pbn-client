@@ -20,21 +20,18 @@ class Page_model extends Base_model
      */
     public function getPage($uri)
     {
-        $response = $this->detectPagination($uri, $_SERVER['QUERY_STRING']);
+        $response = $this->detectPagination($uri);
 
         if (empty($response['uri'])) {
-            $this->queryBuildExistedItems();
-            $this->db->where(array(
-                'isMainPage' => self::STATUS_MAIN_PAGE
-            ));
-            $page = $this->db->get(DatabaseTableEnum::TABLE_PAGE)->row();
+            $page = $this->getMainPage();
             if (!isset($page)) {
                 throw new NotFoundException();
             }
         } else {
             $page = $this->findPage($response['uri']);
         }
-        $page->baseURI = $response['uri'];
+        $page->baseURI = rtrim($response['uri'], '?');
+        $page->baseURI = rtrim($page->baseURI, '&');
 
         /**
          * If the pagination is tuned on
@@ -95,9 +92,9 @@ class Page_model extends Base_model
         $this->loadPageMultilingualFields($page);
 
         /**
-         * Load extra fields
+         * Load extra metadata
          */
-        $this->loadPageExtraFields($page);
+        $page->extraMetadata = $this->loadPageExtraMeta($page);
 
         /**
          * Get next and previous pages
@@ -122,7 +119,25 @@ class Page_model extends Base_model
         $page->carcass = $this->getPageCarcass($page);
         $page->template = $this->getPageTemplate($page);
 
+        /**
+         * Get author
+         */
+        $page->author = $this->getPageAuthor($page);
+
         return $page;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getMainPage()
+    {
+        $this->queryBuildCurrentWebsite();
+        $this->queryBuildExistedItems();
+        $this->db->where(array(
+            'isMainPage' => self::STATUS_MAIN_PAGE
+        ));
+        return $this->db->get(DatabaseTableEnum::TABLE_PAGE)->row();
     }
 
     /**
@@ -134,48 +149,33 @@ class Page_model extends Base_model
     {
         $this->db->order_by('priority');
         $routes = $this->getRecords(DatabaseTableEnum::TABLE_ROUTE);
+        $regexSegment = '/<:[^\/]{1,}>/';
         foreach ($routes as $route) {
 
             /**
              * Prepare regular expressions to find the appropriate
              */
             $regexLink = str_replace('/', '\/', $route->link);
-            $regexLink = str_replace(self::TEMPLATE_ALIAS, '([^\/]{1,})', $regexLink);
-            $regexLink = '/' . str_replace(self::TEMPLATE_ALL, '([\s\S]{1,})', $regexLink) . '/';
+            $regexLink = str_replace('?', '\?', $regexLink);
+            //$regexLink = str_replace(self::TEMPLATE_ALIAS, '([^\/\?\&]{1,})', $regexLink);
+            $regexLink = '/' . preg_replace($regexSegment, '([^\/\?\&]{1,})', $regexLink) . '/';
+
             $matches = array();
 
             /**
              * Check if the regular expressions corresponds to the current route
              */
             if (preg_match($regexLink, $uri, $matches)) {
-
                 /**
                  * Find the number of occurrences
                  * Get the last URL segment as alias
                  */
-                $allOccurrences = substr_count($route->link, self::TEMPLATE_ALL);
-                $aliasOccurrences = substr_count($route->link, self::TEMPLATE_ALIAS);
-                if ($allOccurrences > 0) {
-                    $alias = $matches[1];
-                } else {
-                    $alias = $matches[$aliasOccurrences];
-                }
+                $alias = $matches[count($matches) - 1];
+
                 $page = $this->findPageByAlias($alias, $route);
                 $page->parentsURL = [];
 
-                /**
-                 * If some occurrences where detected
-                 * then try to extract parent items by aliases
-                 */
-                if ($aliasOccurrences > 1) {
-                    for ($i = $aliasOccurrences - 1; $i > 0; $i--) {
-                        try {
-                            $parentPage = $this->findPageByAlias($matches[$i]);
-                            $page->parentsURL[] = $parentPage;
-                        } catch (NotFoundException $ex) {
-                        }
-                    }
-                }
+
                 return $page;
             }
         }
@@ -202,6 +202,7 @@ class Page_model extends Base_model
         $record = $this->db->get(DatabaseTableEnum::TABLE_PAGE_ROUTE)->row();
         if (isset($record)) {
             $this->queryBuildExistedItems();
+            $this->queryBuildCurrentWebsite();
             $this->db->where(array(
                 'id'               => $record->pageID,
                 'isEnabled'        => self::STATUS_ENABLED,
@@ -217,10 +218,9 @@ class Page_model extends Base_model
 
     /**
      * @param $uri
-     * @param $uriGetString
      * @return array
      */
-    private function detectPagination($uri, $uriGetString)
+    private function detectPagination($uri)
     {
         $paginationRecords = $this->getRecords(DatabaseTableEnum::TABLE_PAGINATION);
         $changedURI = '/' . $uri;
@@ -231,28 +231,21 @@ class Page_model extends Base_model
         );
         foreach ($paginationRecords as $paginationRecord) {
             $regexTemplate = str_replace('/', '\/', $paginationRecord->template);
-            $regexLink = '/' . str_replace('<:page>', '([^\/]{1,})', $regexTemplate) . '/';
+            $regexLink = '/' . str_replace('<:page>', '([^\/\&\?]{1,})', $regexTemplate) . '/';
             $matches = array();
 
             /**
              * If the pagination is detected in the URL segment
              */
             if (preg_match($regexLink, $changedURI, $matches)) {
-                $response['uri'] = str_replace($matches[0], "", $changedURI);
+                $response['uri'] = substr($changedURI, 0, strpos($changedURI, $matches[0]));
+                if ($response['uri'] == '/?') {
+                    $response['uri'] = '';
+                }
+                $response['uri'] = rtrim($response['uri'], '/');
                 $response['isPagination'] = true;
                 $response['paginationPage'] = $matches[1];
                 $response['paginationID'] = $paginationRecord->id;
-                break;
-            }
-
-            /**
-             * If the pagination is detected in GET parameters
-             */
-            if (preg_match($regexLink, $uriGetString, $matches)) {
-                $response['isPagination'] = true;
-                $response['paginationPage'] = $matches[1];
-                $response['paginationID'] = $paginationRecord->id;
-                $response['isUriGetParameter'] = true;
                 break;
             }
         }
@@ -267,6 +260,7 @@ class Page_model extends Base_model
      */
     private function getChildPages($page, $paginationPage = null, $count = false)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*');
         $this->db->from(DatabaseTableEnum::TABLE_PAGE);
         $this->db->join(DatabaseTableEnum::TABLE_PAGE_PAGE, DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageChildID = ' . DatabaseTableEnum::TABLE_PAGE . '.id');
@@ -290,6 +284,7 @@ class Page_model extends Base_model
      */
     private function getParentPages($page)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*');
         $this->db->from(DatabaseTableEnum::TABLE_PAGE);
         $this->db->join(DatabaseTableEnum::TABLE_PAGE_PAGE, DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID = ' . DatabaseTableEnum::TABLE_PAGE . '.id');
@@ -362,6 +357,7 @@ class Page_model extends Base_model
      */
     private function getChildPageBySort($parentPageID, $sort, $operator)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*');
         $this->db->from(DatabaseTableEnum::TABLE_PAGE);
         $this->db->join(DatabaseTableEnum::TABLE_PAGE_PAGE, DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageChildID = ' . DatabaseTableEnum::TABLE_PAGE . '.id');
@@ -406,7 +402,7 @@ class Page_model extends Base_model
     /**
      * @param $page
      */
-    private function loadPageMultilingualFields($page)
+    public function loadPageMultilingualFields($page)
     {
         $this->loadMultilingualFields($page, DatabaseTableEnum::TABLE_PAGE_LANGUAGE, 'pageID');
     }
@@ -417,15 +413,26 @@ class Page_model extends Base_model
     private function loadPageExtraFields($page)
     {
         $page->extraFields = array();
-        $records = $this->db->select()
-            ->from(DatabaseTableEnum::TABLE_PAGE_EXTRA)
+
+        $date = DateTime::createFromFormat('Y-m-d', $page->datePublished);
+        $page->year = $date->format('Y');
+        $page->mm = $date->format('m');
+        $page->day = $date->format('d');
+    }
+
+    /**
+     * @param $page
+     * @return mixed
+     */
+    private function loadPageExtraMeta($page)
+    {
+        return $this->db->select('name, content')
+            ->from(DatabaseTableEnum::TABLE_PAGE_EXTRA_META)
             ->where(array(
                 'pageID' => $page->id
             ))
-            ->get()->result();
-        foreach ($records as $record) {
-            $page->extraFields[$record->fieldName] = $record->fieldValue;
-        }
+            ->get()
+            ->result();
     }
 
     /**
@@ -446,6 +453,7 @@ class Page_model extends Base_model
      */
     private function getPageRoutes($page)
     {
+        $this->loadPageExtraFields($page);
         $pageRoutes = $this->db->join(DatabaseTableEnum::TABLE_ROUTE, DatabaseTableEnum::TABLE_ROUTE . '.id = ' . DatabaseTableEnum::TABLE_PAGE_ROUTE . '.routeID')
             ->where(array(
                 'isDeleted' => self::STATUS_NOT_DELETED,
@@ -455,8 +463,15 @@ class Page_model extends Base_model
             ->get(DatabaseTableEnum::TABLE_PAGE_ROUTE)
             ->result();
         foreach ($pageRoutes as $pageRoute) {
-            $pageRoute->route = str_replace(self::TEMPLATE_ALIAS, $pageRoute->alias, $pageRoute->link);
-            $pageRoute->route = site_url(str_replace(self::TEMPLATE_ALL, $pageRoute->alias, $pageRoute->route));
+            $matches = array();
+            $page->alias = $pageRoute->alias;
+            $link = $pageRoute->link;
+            if (preg_match_all('/<:([^\/]{1,})>/', $link, $matches)) {
+                foreach ($matches[1] as $key => $fieldName) {
+                    $link = str_replace($matches[0][$key], $page->{$fieldName}, $link);
+                }
+            }
+            $pageRoute->route = site_url($link);
         }
         return $pageRoutes;
     }
@@ -498,13 +513,34 @@ class Page_model extends Base_model
     }
 
     /**
+     * @param $page
+     * @return mixed
+     */
+    private function getPageAuthor($page)
+    {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
+        return $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*, title')
+            ->from(DatabaseTableEnum::TABLE_PAGE)
+            ->join(DatabaseTableEnum::TABLE_PAGE_LANGUAGE, DatabaseTableEnum::TABLE_PAGE_LANGUAGE . '.pageID = ' . DatabaseTableEnum::TABLE_PAGE . '.id')
+            ->where(array(
+                DatabaseTableEnum::TABLE_PAGE . '.id' => $page->authorID,
+                'isEnabled'                           => self::STATUS_ENABLED,
+                'isDeleted'                           => self::STATUS_NOT_DELETED,
+                'pageTypeID'                          => 3
+            ))
+            ->get()
+            ->row();
+    }
+
+    /**
      * @param $number
      * @return mixed
      */
     public function getRecentPosts($number)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $pages = $this->db->where(array(
-            'isDeleted'                                         => self::STATUS_NOT_DELETED,
+            DatabaseTableEnum::TABLE_PAGE . '.isDeleted'        => self::STATUS_NOT_DELETED,
             'isEnabled'                                         => self::STATUS_ENABLED,
             DatabaseTableEnum::TABLE_PAGE_TYPE . '.alias'       => 'post',
             DatabaseTableEnum::TABLE_PAGE . '.datePublished <=' => date('Y-m-d')
@@ -526,12 +562,14 @@ class Page_model extends Base_model
      */
     public function getAllPagesForSitemapXml()
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $pages = $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*')
             ->from(DatabaseTableEnum::TABLE_PAGE)
             ->where(array(
-                'isEnabled'        => self::STATUS_ENABLED,
-                'isDeleted'        => self::STATUS_NOT_DELETED,
-                'datePublished <=' => date('Y-m-d')
+                'isEnabled'           => self::STATUS_ENABLED,
+                'isDeleted'           => self::STATUS_NOT_DELETED,
+                'datePublished <='    => date('Y-m-d'),
+                'isVisibleSitemapXml' => self::STATE_ON
             ))
             ->get()
             ->result();
@@ -549,13 +587,15 @@ class Page_model extends Base_model
      */
     public function getPagesForSitemapHtml($limit, $parentID = null)
     {
+        $this->queryBuildCurrentWebsite(DatabaseTableEnum::TABLE_PAGE);
         $this->db->select(DatabaseTableEnum::TABLE_PAGE . '.*')
             ->from(DatabaseTableEnum::TABLE_PAGE)
             ->where(array(
                 'isEnabled'                                          => self::STATUS_ENABLED,
                 'isDeleted'                                          => self::STATUS_NOT_DELETED,
                 'datePublished <='                                   => date('Y-m-d'),
-                DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID' => $parentID
+                DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageParentID' => $parentID,
+                'isVisibleSitemapHtml'                               => self::STATE_ON
             ))
             ->limit($limit);
         $this->db->join(DatabaseTableEnum::TABLE_PAGE_PAGE, DatabaseTableEnum::TABLE_PAGE_PAGE . '.pageChildID = ' . DatabaseTableEnum::TABLE_PAGE . '.id', 'left');

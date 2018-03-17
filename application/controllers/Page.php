@@ -15,13 +15,9 @@ class Page extends CI_Controller
     public function __construct()
     {
         parent::__construct();
-        /**
-         * Prepare menu structures
-         */
-        $this->data['menuHeader'] = $this->menu_model->getMenuByType('header');
-        $this->data['menuFooter'] = $this->menu_model->getMenuByType('footer');
 
         $this->data['metaData'] = array();
+        $this->data['linkData'] = array();
     }
 
     public function show()
@@ -32,6 +28,9 @@ class Page extends CI_Controller
              * Try to fetch page
              */
             $uriString = $this->uri->uri_string();
+            if (!empty($_SERVER['QUERY_STRING'])) {
+                $uriString .= '?' . $_SERVER['QUERY_STRING'];
+            }
             $page = $this->page_model->getPage($uriString);
 
             /**
@@ -105,6 +104,9 @@ class Page extends CI_Controller
             'description' => $page->seoDescription,
             'keywords'    => $page->seoKeywords
         );
+        foreach ($page->extraMetadata as $meta) {
+            $this->data['metaData'][$meta->name] = $meta->content;
+        }
     }
 
     /**
@@ -117,6 +119,7 @@ class Page extends CI_Controller
          * Generate base url for page
          */
         $url = site_url($page->baseURI);
+
 
         /**
          * GET parameter which corresponds to pagination number
@@ -160,6 +163,18 @@ class Page extends CI_Controller
         );
         $this->pagination->initialize($config);
         $page->paginationLinks = $this->pagination->create_links();
+        if (isset($this->pagination->previousLink)) {
+            $this->data['linkData'][] = array(
+                'rel'  => 'prev',
+                'href' => $this->pagination->previousLink
+            );
+        }
+        if (isset($this->pagination->nextLink)) {
+            $this->data['linkData'][] = array(
+                'rel'  => 'next',
+                'href' => $this->pagination->nextLink
+            );
+        }
     }
 
     /**

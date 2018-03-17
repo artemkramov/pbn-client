@@ -4,6 +4,11 @@
  * @var array $menu
  */
 
+$CI =& get_instance();
+$menuHTML = $CI->menu->init(array(
+    'type' => 'header'
+))->widget();
+
 ?>
 <!-- Navigation -->
 <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">

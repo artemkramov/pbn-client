@@ -4,6 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * @var string $title
  * @var array $metaData
+ * @var array $linkData
  * @var stdClass $page
  * @var array $menuHeader
  * @var array $menuFooter
@@ -18,14 +19,20 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         <meta name="<?= $name ?>" content="<?= $metaValue ?>"/>
     <? endforeach; ?>
 
+    <? foreach ($linkData as $link): ?>
+        <link <? foreach ($link as $key => $value) { echo sprintf('%s="%s" ', $key, $value); } ?>  />
+    <? endforeach; ?>
+
     <!-- Bootstrap core CSS -->
     <link href="<?= base_url('/assets/vendor/bootstrap/css/bootstrap.min.css') ?>" rel="stylesheet">
 
     <!-- Custom fonts for this template -->
-    <link href="<?= base_url('/assets/vendor/font-awesome/css/font-awesome.min.css')?>" rel="stylesheet" type="text/css">
+    <link href="<?= base_url('/assets/vendor/font-awesome/css/font-awesome.min.css') ?>" rel="stylesheet"
+          type="text/css">
     <link href="https://fonts.googleapis.com/css?family=Montserrat:400,700" rel="stylesheet" type="text/css">
     <link href='https://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
-    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+    <link href='https://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic,700italic' rel='stylesheet'
+          type='text/css'>
     <link href='https://fonts.googleapis.com/css?family=Roboto+Slab:400,100,300,700' rel='stylesheet' type='text/css'>
 
     <!-- Custom styles for this template -->
@@ -33,21 +40,29 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 </head>
 <body id="page-top">
 
-<? $this->load->view('inner/header', array(
-    'menu' => $menuHeader
-)) ?>
+<? $this->load->view('inner/header') ?>
+
+<?
+
+if (isset($page->breadcrumb)) {
+    $CI =& get_instance();
+    echo $CI->breadcrumbs->init(array(
+        'links'      => $page->breadcrumb,
+        'isMainPage' => $page->isMainPage
+    ))->widget();
+}
+
+?>
 
 <? $this->load->view('carcass/' . $page->carcass, array(
     'page' => $page
 )) ?>
 
-<? $this->load->view('inner/footer', array(
-    'menu' => $menuFooter
-)) ?>
+<? $this->load->view('inner/footer') ?>
 
 <!-- Bootstrap core JavaScript -->
 <script src="<?= base_url('/assets/vendor/jquery/jquery.min.js') ?>"></script>
-<script src="<?=  base_url('/assets/vendor/bootstrap/js/bootstrap.bundle.min.js')?>"></script>
+<script src="<?= base_url('/assets/vendor/bootstrap/js/bootstrap.bundle.min.js') ?>"></script>
 
 <!-- Plugin JavaScript -->
 <script src="<?= base_url('/assets/vendor/jquery-easing/jquery.easing.min.js') ?>"></script>
