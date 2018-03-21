@@ -19,7 +19,8 @@ $config = array(
     'cur_tag_link'         => true,
     'delimiter_tag_open'   => '<li>',
     'delimiter_tag_close'  => '</li>',
-    'delimiter'            => '...'
+    'delimiter'            => '...',
+    'per_page'             => 10
 );
 
 ?>

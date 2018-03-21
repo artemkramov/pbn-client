@@ -272,6 +272,9 @@ class Page_model extends Base_model
         ));
         $this->db->order_by('datePublished', 'DESC');
         if ($page->isPaginationOn && isset($paginationPage) && !$count) {
+            if (empty($page->paginationPerPage)) {
+                $page->paginationPerPage = $this->pagination->per_page;
+            }
             $this->db->limit($page->paginationPerPage, ($paginationPage - 1) * $page->paginationPerPage);
         }
         $query = $this->db->distinct();

@@ -98,7 +98,7 @@ class Base_model extends CI_Model
 abstract class DatabaseTableEnum
 {
 
-    const TABLE_LANGUAGE = 'language';
+    const TABLE_LANGUAGE = 'lang';
     const TABLE_PAGE = 'page';
     const TABLE_PAGE_EXTRA_META = 'page-extra-meta';
     const TABLE_PAGE_LANGUAGE = 'page-language';
